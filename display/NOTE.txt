@@ -1,0 +1,2 @@
+the "display_real_time_last.py" is used in itl display, I make a hard code in this script
+I should get dpi value dynamically by command: "xdpyinfo | grep resolution"
