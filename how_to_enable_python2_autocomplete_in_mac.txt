@@ -1,0 +1,54 @@
+# 如何让mac上自带的python2.7在交互解释器下可以自动补全
+
+
+
+## 1 将下面的代码家加入到~/.pythonconf下
+
+mqliang@LeungLeodeMacBook-Pro(0):~$ cat ~/.pythonconf
+import readline
+import rlcompleter
+import os
+import atexit
+
+class TabCompleter(rlcompleter.Completer):
+    """Completer that supports indenting"""
+    def complete(self, text, state):
+        if not text:
+            return ('    ', None)[state]
+        else:
+            return rlcompleter.Completer.complete(self, text, state)
+
+readline.set_completer(TabCompleter().complete)
+
+if 'libedit' in readline.__doc__:
+    readline.parse_and_bind("bind -e")
+    readline.parse_and_bind("bind '\t' rl_complete")
+else:
+    readline.parse_and_bind("tab: complete")
+
+histfile = os.path.join(os.environ["HOME"], ".py2_hist")
+try:
+    readline.read_history_file(histfile)
+except IOError:
+    pass
+atexit.register(readline.write_history_file, histfile)
+del histfile
+
+## 2 将下面的shell代码加入到~/.bash_profile中，可以让启动的时候使用，逻辑是如果时python2.7的话就加载自动补全的代码，如果是python3的话就不加载(因为本身python3就可以自动补全的)
+
+python_version="$(python -c 'import sys; print(sys.version)')"
+echo ${python_version} | grep '2.7' > /dev/null
+ret=$?
+if [ "${ret}" == "0" ]
+then
+    echo -e "\033[01;31mpython version is 2.7\033[0m"
+    export PYTHONSTARTUP="${HOME}/.pythonconf"
+else
+    ret="$(echo ${python_version} | grep '3.5')"
+    if [ "${ret}" == "0" ]
+    then
+        echo -e "\033[01;31mpython version is 2.7\033[0m"
+    else
+        echo -e "\033[01;31mno expected python version found!!!\033[0m"
+    fi
+fi
